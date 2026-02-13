@@ -19,6 +19,7 @@ export interface Panel {
   conversationHistory: Message[];
   isLoading: boolean;
   error: string | null;
+  totalCost: number;
 }
 
 export interface AppState {
@@ -54,6 +55,7 @@ function createPanel(): Panel {
     conversationHistory: [],
     isLoading: false,
     error: null,
+    totalCost: 0,
   };
 }
 
@@ -103,6 +105,7 @@ export const useAppStore = create<AppState>()(
             conversationHistory: [],
             isLoading: false,
             error: null,
+            totalCost: 0,
           })),
         })),
 
@@ -201,12 +204,15 @@ export const useAppStore = create<AppState>()(
               const current = get().panels.find((p) => p.id === panel.id);
               if (!current) return;
 
+              const cost = data.usage?.cost ?? 0;
+
               updatePanel(panel.id, {
                 isLoading: false,
                 conversationHistory: [
                   ...current.conversationHistory,
                   { role: "assistant", content: assistantContent },
                 ],
+                totalCost: (current.totalCost ?? 0) + cost,
               });
             } catch (err) {
               updatePanel(panel.id, {
@@ -231,6 +237,7 @@ export const useAppStore = create<AppState>()(
           conversationHistory: p.conversationHistory,
           isLoading: false,
           error: null,
+          totalCost: p.totalCost,
         })),
       }),
     }

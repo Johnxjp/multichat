@@ -202,6 +202,7 @@ export function ModelPanel({ panel }: { panel: Panel }) {
             updatePanel(panel.id, {
               conversationHistory: [],
               error: null,
+              totalCost: 0,
             })
           }
           className="p-1 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-800"
@@ -247,6 +248,11 @@ export function ModelPanel({ panel }: { panel: Panel }) {
       {/* Model ID display */}
       <div className="text-xs text-gray-500 mb-2 truncate">
         {selectedModel ? panel.modelId : "No model selected"}
+        {panel.totalCost >= 0 && (
+          <span className="ml-2 text-green-400">
+            ${panel.totalCost < 0.01 ? panel.totalCost.toFixed(6) : panel.totalCost.toFixed(4)}
+          </span>
+        )}
       </div>
 
       {/* Conversation area */}
