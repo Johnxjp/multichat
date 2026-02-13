@@ -11,6 +11,18 @@ export interface OpenRouterModel {
   name: string;
 }
 
+export interface ExportConversation {
+  model_id: string;
+  messages: Array<{ role: string; content: string }>;
+  total_cost: number;
+}
+
+export interface ExportData {
+  system_prompt: string;
+  timestamp: string;
+  conversations: ExportConversation[];
+}
+
 export interface Panel {
   id: string;
   modelId: string | null;
@@ -131,29 +143,33 @@ export const useAppStore = create<AppState>()(
         })),
 
       saveAllConversations: () => {
-        const { panels } = get();
+        const { panels, systemPrompt } = get();
 
-        // Build export object: { modelId: { messages, total_cost } }
-        const exportData: Record<string, { messages: Array<{role: string, content: string}>, total_cost: number }> = {};
+        // Generate timestamps
+        const now = new Date();
+        const isoTimestamp = now.toISOString(); // For data: "2026-02-13T19:45:30.123Z"
+        const filenameSafeTimestamp = isoTimestamp.replace(/:/g, '-').split('.')[0]; // For filename
 
-        for (const panel of panels) {
-          if (panel.modelId) {
-            // Strip latency from messages
-            const messages = panel.conversationHistory.map(msg => ({
+        // Build conversations array
+        const conversations: ExportConversation[] = panels
+          .filter((panel) => panel.modelId !== null)
+          .map((panel) => ({
+            model_id: panel.modelId as string,
+            messages: panel.conversationHistory.map((msg) => ({
               role: msg.role,
-              content: msg.content
-            }));
+              content: msg.content,
+            })),
+            total_cost: panel.totalCost,
+          }));
 
-            exportData[panel.modelId] = {
-              messages,
-              total_cost: panel.totalCost
-            };
-          }
-        }
+        // Create new export data structure
+        const exportData: ExportData = {
+          system_prompt: systemPrompt,
+          timestamp: isoTimestamp,
+          conversations: conversations,
+        };
 
-        // Generate timestamp in ISO format, replace colons for filename safety
-        const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
-        const filename = `multichat-${timestamp}.json`;
+        const filename = `multichat-${filenameSafeTimestamp}.json`;
 
         // Create blob and trigger download
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
