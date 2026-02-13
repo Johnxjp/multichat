@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAppStore } from "@/store/useAppStore";
 
 export function SettingsPanel() {
@@ -9,12 +9,44 @@ export function SettingsPanel() {
   const apiKey = useAppStore((s) => s.apiKey);
   const systemPrompt = useAppStore((s) => s.systemPrompt);
   const query = useAppStore((s) => s.query);
+  const modelsLoading = useAppStore((s) => s.modelsLoading);
+  const modelsError = useAppStore((s) => s.modelsError);
+  const models = useAppStore((s) => s.models);
+  const panels = useAppStore((s) => s.panels);
   const setApiKey = useAppStore((s) => s.setApiKey);
   const setSystemPrompt = useAppStore((s) => s.setSystemPrompt);
   const setQuery = useAppStore((s) => s.setQuery);
   const clearAllConversations = useAppStore((s) => s.clearAllConversations);
+  const fetchModels = useAppStore((s) => s.fetchModels);
+  const sendToAll = useAppStore((s) => s.sendToAll);
 
-  const canSend = apiKey.trim().length > 0 && query.trim().length > 0;
+  const isSending = panels.some((p) => p.isLoading);
+  const canSend =
+    apiKey.trim().length > 0 && query.trim().length > 0 && !isSending;
+
+  // Fetch models when API key changes (debounced)
+  useEffect(() => {
+    if (!apiKey.trim()) return;
+    const timeout = setTimeout(() => {
+      fetchModels();
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [apiKey, fetchModels]);
+
+  const handleSend = useCallback(() => {
+    if (canSend) sendToAll();
+  }, [canSend, sendToAll]);
+
+  // Allow Ctrl+Enter / Cmd+Enter to send from the query textarea
+  const handleQueryKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend]
+  );
 
   return (
     <aside className="w-[300px] shrink-0 border-r border-gray-800 bg-gray-900 p-4 overflow-y-auto flex flex-col">
@@ -51,6 +83,20 @@ export function SettingsPanel() {
               )}
             </button>
           </div>
+          {/* Model status indicator */}
+          <div className="mt-1 text-xs">
+            {modelsLoading && (
+              <span className="text-gray-500">Loading models...</span>
+            )}
+            {modelsError && (
+              <span className="text-red-400">{modelsError}</span>
+            )}
+            {!modelsLoading && !modelsError && models.length > 0 && (
+              <span className="text-gray-500">
+                {models.length} models available
+              </span>
+            )}
+          </div>
         </div>
 
         {/* System Prompt */}
@@ -83,7 +129,8 @@ export function SettingsPanel() {
             id="query"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Enter your prompt..."
+            onKeyDown={handleQueryKeyDown}
+            placeholder="Enter your prompt... (Ctrl+Enter to send)"
             rows={3}
             className="w-full rounded-md bg-gray-800 border border-gray-700 px-3 py-2 text-sm text-gray-100 placeholder-gray-500 resize-y focus:outline-none focus:border-blue-500"
           />
@@ -93,9 +140,10 @@ export function SettingsPanel() {
         <button
           type="button"
           disabled={!canSend}
+          onClick={handleSend}
           className="w-full h-9 rounded-md bg-blue-600 flex items-center justify-center text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Send to All
+          {isSending ? "Sending..." : "Send to All"}
         </button>
 
         {/* Clear All */}

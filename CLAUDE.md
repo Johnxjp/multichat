@@ -16,15 +16,18 @@ Side-by-side LLM output comparison app. Users select multiple AI models (via Ope
 ```
 src/
 ├── app/
-│   ├── layout.tsx          # Root layout
-│   ├── page.tsx            # Home page (main UI)
-│   └── globals.css         # Tailwind import only
+│   ├── api/
+│   │   ├── chat/route.ts     # POST proxy → OpenRouter chat completions
+│   │   └── models/route.ts   # GET proxy → OpenRouter model list
+│   ├── layout.tsx             # Root layout
+│   ├── page.tsx               # Home page (main UI)
+│   └── globals.css            # Tailwind import only
 ├── components/
-│   ├── SettingsPanel.tsx   # Left sidebar (API key, prompts, send/clear)
-│   ├── PanelArea.tsx       # Scrollable panel container with drag-drop
-│   └── ModelPanel.tsx      # Individual model comparison card
+│   ├── SettingsPanel.tsx      # Left sidebar (API key, prompts, send/clear)
+│   ├── PanelArea.tsx          # Scrollable panel container with drag-drop
+│   └── ModelPanel.tsx         # Individual model comparison card
 └── store/
-    └── useAppStore.ts      # Zustand store (AppState, Panel, Message)
+    └── useAppStore.ts         # Zustand store (AppState, Panel, Message)
 ```
 
 **Path alias:** `@/*` maps to `./src/*`
@@ -50,4 +53,4 @@ npm run build
 - **State:** Single Zustand store manages API key, system prompt, query, and panel array. Conversation history is in-memory only (not persisted).
 - **Panels:** Each panel has its own model selection, conversation history, active/pinned state. Pinned panels auto-sort to the left.
 - **Styling:** Dark theme throughout. All styling via Tailwind utility classes — no custom CSS.
-- **OpenRouter integration:** API routes (`/api/chat`, `/api/models`) are not yet implemented — model list is hardcoded placeholder.
+- **OpenRouter integration:** API routes (`/api/chat`, `/api/models`) proxy requests to OpenRouter. Model list fetched automatically when API key is entered (debounced 500ms). `sendToAll()` dispatches queries to all active panels in parallel.
