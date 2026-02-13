@@ -9,6 +9,10 @@ A web application that lets users compare LLM outputs side-by-side by selecting 
 - Shared system prompt across all panels
 - Drag-and-drop panel reordering with pin-to-left support
 - Per-panel active/inactive toggle (inactive panels skip queries)
+- Cost tracking per panel (from OpenRouter API usage data)
+- Response latency display for each assistant message
+- Save All conversations to JSON (exports all panels with messages and costs)
+- Clear All conversations with one click
 - In-memory state — refreshing the page resets the app
 - Parallel request dispatch — if one model fails, others continue
 
