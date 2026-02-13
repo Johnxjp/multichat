@@ -3,6 +3,7 @@ import { create } from "zustand";
 export interface Message {
   role: "user" | "assistant";
   content: string;
+  latency?: number; // Response time in milliseconds (assistant messages only)
 }
 
 export interface OpenRouterModel {
@@ -175,6 +176,8 @@ export const useAppStore = create<AppState>()(
             messages.push(...panel.conversationHistory, userMessage);
 
             try {
+              const startTime = performance.now();
+
               const response = await fetch("/api/chat", {
                 method: "POST",
                 headers: {
@@ -195,6 +198,9 @@ export const useAppStore = create<AppState>()(
               }
 
               const data = await response.json();
+              const endTime = performance.now();
+              const latency = Math.round(endTime - startTime);
+
               const assistantContent =
                 data.choices?.[0]?.message?.content ?? "";
 
@@ -208,7 +214,7 @@ export const useAppStore = create<AppState>()(
                 isLoading: false,
                 conversationHistory: [
                   ...current.conversationHistory,
-                  { role: "assistant", content: assistantContent },
+                  { role: "assistant", content: assistantContent, latency },
                 ],
                 totalCost: (current.totalCost ?? 0) + cost,
               });

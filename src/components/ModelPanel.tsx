@@ -270,8 +270,9 @@ export function ModelPanel({ panel }: { panel: Panel }) {
                   msg.role === "user" ? "text-blue-300" : "text-gray-200"
                 }`}
               >
-                <span className="text-xs text-gray-500 uppercase">
-                  {msg.role}:
+                <span className="text-xs text-gray-500">
+                  <span className="uppercase">{msg.role}</span>
+                  {msg.latency !== undefined && ` (${msg.latency}ms)`}:
                 </span>
                 <p className="mt-0.5 whitespace-pre-wrap">{msg.content}</p>
               </div>
