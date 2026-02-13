@@ -39,6 +39,7 @@ export interface AppState {
   updatePanel: (id: string, updates: Partial<Panel>) => void;
   reorderPanels: (ids: string[]) => void;
   clearAllConversations: () => void;
+  saveAllConversations: () => void;
   fetchModels: () => Promise<void>;
   sendToAll: () => Promise<void>;
 }
@@ -128,6 +129,43 @@ export const useAppStore = create<AppState>()(
             totalCost: 0,
           })),
         })),
+
+      saveAllConversations: () => {
+        const { panels } = get();
+
+        // Build export object: { modelId: { messages, total_cost } }
+        const exportData: Record<string, { messages: Array<{role: string, content: string}>, total_cost: number }> = {};
+
+        for (const panel of panels) {
+          if (panel.modelId) {
+            // Strip latency from messages
+            const messages = panel.conversationHistory.map(msg => ({
+              role: msg.role,
+              content: msg.content
+            }));
+
+            exportData[panel.modelId] = {
+              messages,
+              total_cost: panel.totalCost
+            };
+          }
+        }
+
+        // Generate timestamp in ISO format, replace colons for filename safety
+        const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
+        const filename = `multichat-${timestamp}.json`;
+
+        // Create blob and trigger download
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      },
 
       fetchModels: async () => {
         const { apiKey } = get();

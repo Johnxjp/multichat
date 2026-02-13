@@ -17,6 +17,7 @@ export function SettingsPanel() {
   const setSystemPrompt = useAppStore((s) => s.setSystemPrompt);
   const setQuery = useAppStore((s) => s.setQuery);
   const clearAllConversations = useAppStore((s) => s.clearAllConversations);
+  const saveAllConversations = useAppStore((s) => s.saveAllConversations);
   const fetchModels = useAppStore((s) => s.fetchModels);
   const sendToAll = useAppStore((s) => s.sendToAll);
 
@@ -144,6 +145,15 @@ export function SettingsPanel() {
           className="w-full h-9 rounded-md bg-blue-600 flex items-center justify-center text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isSending ? "Sending..." : "Send to All"}
+        </button>
+
+        {/* Save All */}
+        <button
+          type="button"
+          onClick={() => saveAllConversations()}
+          className="w-full h-9 rounded-md bg-gray-800 border border-gray-700 flex items-center justify-center text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors"
+        >
+          Save All
         </button>
 
         {/* Clear All */}
