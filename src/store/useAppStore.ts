@@ -82,11 +82,32 @@ export const useAppStore = create<AppState>()(
         })),
 
       updatePanel: (id, updates) =>
-        set((state) => ({
-          panels: state.panels.map((p) =>
-            p.id === id ? { ...p, ...updates } : p
-          ),
-        })),
+        set((state) => {
+          const panel = state.panels.find((p) => p.id === id);
+
+          // Detect model change (not initial selection)
+          const isModelChange =
+            updates.modelId !== undefined &&
+            panel?.modelId !== null &&
+            panel?.modelId !== updates.modelId;
+
+          if (isModelChange) {
+            // Reset panel on model change
+            updates = {
+              ...updates,
+              conversationHistory: [],
+              error: null,
+              totalCost: 0,
+              isLoading: false,
+            };
+          }
+
+          return {
+            panels: state.panels.map((p) =>
+              p.id === id ? { ...p, ...updates } : p
+            ),
+          };
+        }),
 
       reorderPanels: (ids) =>
         set((state) => {
