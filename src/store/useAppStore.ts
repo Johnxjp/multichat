@@ -32,6 +32,7 @@ export interface Panel {
   isLoading: boolean;
   error: string | null;
   totalCost: number;
+  width: number;
 }
 
 export interface AppState {
@@ -69,6 +70,7 @@ function createPanel(): Panel {
     isLoading: false,
     error: null,
     totalCost: 0,
+    width: 400,
   };
 }
 

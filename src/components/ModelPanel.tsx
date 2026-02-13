@@ -1,9 +1,67 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useAppStore, type Panel } from "@/store/useAppStore";
+
+// ResizeHandle component for draggable panel width adjustment
+function ResizeHandle({ onResize }: { onResize: (newWidth: number) => void }) {
+  const [isResizing, setIsResizing] = useState(false);
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation(); // Prevent drag-drop activation
+
+      const startX = e.clientX;
+      const startWidth = (e.currentTarget.parentElement as HTMLElement)?.offsetWidth || 400;
+
+      setIsResizing(true);
+      document.body.style.cursor = "col-resize";
+
+      let animationFrameId: number;
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+        }
+
+        animationFrameId = requestAnimationFrame(() => {
+          const delta = moveEvent.clientX - startX;
+          const newWidth = Math.max(400, Math.min(800, startWidth + delta));
+          onResize(newWidth);
+        });
+      };
+
+      const handleMouseUp = () => {
+        setIsResizing(false);
+        document.body.style.cursor = "";
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+        }
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    },
+    [onResize]
+  );
+
+  return (
+    <div
+      onMouseDown={handleMouseDown}
+      className="absolute top-0 right-0 bottom-0 cursor-col-resize flex items-center justify-center"
+      style={{ zIndex: 10 }}
+    >
+      <div
+        className={`w-0.5 h-full hover:bg-gray-500`}
+      />
+    </div>
+  );
+}
 
 export function ModelPanel({ panel }: { panel: Panel }) {
   const { updatePanel, removePanel } = useAppStore();
@@ -14,6 +72,15 @@ export function ModelPanel({ panel }: { panel: Panel }) {
   const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
+
+  const handleResize = useCallback(
+    (newWidth: number) => {
+      updatePanel(panel.id, { width: newWidth });
+    },
+    [panel.id, updatePanel]
+  );
+
+  const panelWidth = panel.width ?? 400;
 
   // Prevent hydration errors by only using sortable hooks on client
   useEffect(() => {
@@ -74,8 +141,8 @@ export function ModelPanel({ panel }: { panel: Panel }) {
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className={`w-[400px] shrink-0 rounded-lg border bg-gray-900 p-4 flex flex-col ${
+      style={{ ...style, width: `${panelWidth}px` }}
+      className={`relative shrink-0 rounded-lg border bg-gray-900 p-4 flex flex-col ${
         isDragging ? "opacity-50 z-50" : ""
       } ${panel.isActive ? "border-gray-700" : "border-gray-800 opacity-60"} ${
         panel.isPinned ? "border-l-2 border-l-blue-500" : ""
@@ -295,6 +362,8 @@ export function ModelPanel({ panel }: { panel: Panel }) {
 
         <div ref={conversationEndRef} />
       </div>
+
+      <ResizeHandle onResize={handleResize} />
     </div>
   );
 }
