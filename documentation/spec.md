@@ -1,83 +1,117 @@
-# LLM Comparison Tool — Settings & Panel Components
-
 ## Goal
-Build the settings panel (left sidebar) and model panel components for the LLM comparison tool, turning the static scaffolding into interactive, state-managed UI.
+Build a web application that lets users compare LLM outputs side-by-side by selecting multiple models from OpenRouter, entering a shared system prompt and query, and viewing each model's response in its own panel.
 
 ## Tasks
 
-### 1. Settings panel (left sidebar)
-Build the interactive settings sidebar with API key input, system prompt textarea, query input, and "Send to All" button. Wire up local state for all fields. API key should be stored in session state only (never persisted). System prompt and query are shared across all panels.
+1. Project scaffolding and layout shell
+2. Settings panel (left sidebar)
+3. Model panel component + panel management
+4. OpenRouter integration — model list + chat API
+5. Polish, responsive tweaks, and final QA
 
-**Scope:**
-- `src/components/SettingsPanel.tsx` (new)
-- `src/app/page.tsx` (replace static sidebar with component)
-- State management setup (Zustand store or React Context)
+## Architecture
 
-**Definition of Done:**
-- API key input with show/hide toggle
-- System prompt textarea (resizable)
-- Query input field
-- "Send to All" button (disabled when no API key or no query)
-- "Clear All" button to reset all conversations
-- All fields wired to shared state store
-- Settings panel renders correctly in the left sidebar at ~300px width
+### Tech Stack
+- **Framework**: Next.js 14+ (App Router) with TypeScript
+- **Styling**: Tailwind CSS
+- **State Management**: React Context or Zustand (decide during implementation — lean toward Zustand for panel state complexity)
+- **Drag & Drop**: @dnd-kit/sortable
+- **Deployment**: Vercel
 
-### 2. Model panel component and panel management
-Build the ModelPanel component and panel management logic — adding/removing panels, model selection dropdown (placeholder data for now), active/inactive toggle, pin toggle, conversation display area, and drag-to-reorder with @dnd-kit.
-
-**Scope:**
-- `src/components/ModelPanel.tsx` (new)
-- `src/components/PanelArea.tsx` (new — the scrollable container)
-- `src/store/` or `src/context/` — panel state (array of Panel objects)
-- `src/app/page.tsx` (replace static panels with PanelArea)
-- Install `zustand` and `@dnd-kit/core` + `@dnd-kit/sortable`
-
-**Definition of Done:**
-- "Add Panel" button creates a new panel
-- Each panel has: model selector (dropdown with placeholder data), active/inactive toggle, pin toggle, close button
-- Conversation area shows messages (empty state for now)
-- Panels are drag-to-reorder via @dnd-kit
-- Pinned panels stay on the left side
-- Panel state persisted to localStorage (panel config only, not conversations yet)
-- Horizontal scroll works when panels overflow
-
-## Acceptance Criteria
-1. Settings sidebar is fully interactive with API key, system prompt, and query fields
-2. State is managed via Zustand store shared between settings and panels
-3. Panels can be added, removed, reordered (drag), pinned, and toggled active/inactive
-4. Panel configuration persists across page reloads via localStorage
-5. App builds without errors (`npm run build` passes)
-6. Lint passes (`npx next lint`)
-
-## Non-goals
-- OpenRouter API integration (next workspace/task)
-- Actual chat/message sending functionality
-- Streaming responses
-- Per-model configuration (temperature, etc.)
-- Mobile layout optimization
-
-## Assumptions
-- Zustand for state management (simpler than Context for this use case)
-- @dnd-kit for drag-and-drop (confirmed in parent spec)
-- Placeholder model list data until OpenRouter integration task
-- localStorage is sufficient for panel config persistence
-
-## Verification Plan
-```bash
-npm run build
-npx next lint
+### Layout
+```
+┌──────────────┬────────────────────────────────────────────┐
+│              │  Panel 1   │  Panel 2   │  Panel 3   │ ... │
+│   Settings   │  (pinned)  │            │            │     │
+│   Panel      │  Model A   │  Model B   │  Model C   │     │
+│   (fixed)    │  [chat]    │  [chat]    │  [chat]    │     │
+│   ~300px     │  ~400px    │  ~400px    │  ~400px    │     │
+│              │            │            │            │     │
+└──────────────┴────────────────────────────────────────────┘
+                ← horizontally scrollable →
 ```
 
-### Manual QA:
-1. Settings sidebar renders with all fields
-2. API key input has show/hide toggle
-3. "Send to All" button disabled when no key or query
-4. Can add multiple panels
-5. Can drag to reorder panels
-6. Can pin/unpin panels (pinned stay left)
-7. Can toggle panels active/inactive
-8. Can close panels
-9. Refresh page — panel config persists
+### Data Flow
+1. User enters API key → stored in React state (session only, never persisted)
+2. API key triggers model list fetch → cached in state + localStorage
+3. User writes system prompt → stored in state, shared across all panels
+4. User writes query + clicks Send → dispatched to all **active** panels
+5. Each active panel: builds messages array (system prompt + conversation history + new user message) → calls `POST /api/chat` → displays response
+6. Inactive panels: skipped entirely (no request sent)
+7. Conversation history per panel → persisted to localStorage
+
+### API Routes (thin proxy)
+- `POST /api/chat` — Proxies to `https://openrouter.ai/api/v1/chat/completions`
+  - Client sends: `{ model, messages }` + API key in `Authorization` header
+  - Server forwards to OpenRouter, returns response
+- `GET /api/models` — Proxies to `https://openrouter.ai/api/v1/models`
+  - Client sends: API key in `Authorization` header
+  - Server forwards to OpenRouter, returns model list
+
+### Panel State (per panel)
+```typescript
+interface Panel {
+  id: string;
+  modelId: string | null;
+  isActive: boolean;
+  isPinned: boolean;
+  conversationHistory: Message[];
+  isLoading: boolean;
+  error: string | null;
+}
+```
+
+## Acceptance Criteria
+1. User can enter an OpenRouter API key and see a list of available models
+2. User can add multiple panels, each selecting a different model
+3. User can write a system prompt shared by all models
+4. User can send a query and see responses from all active models side-by-side
+5. User can drag panels to reorder them
+6. User can pin panels to the left
+7. User can toggle panels active/inactive (inactive panels skip queries)
+8. User can clear conversation per panel or all at once
+9. Conversation history persists across page reloads (localStorage)
+10. If one model fails, others continue — error shown inline
+11. Model list is searchable and can be refreshed
+12. App builds and deploys to Vercel without errors
+
+## Non-goals
+- Streaming responses (future enhancement)
+- Per-model configuration (temperature, max_tokens, etc.) — future enhancement
+- Database persistence / user accounts — future enhancement
+- Image/file uploads in prompts
+- Model cost tracking or usage analytics
+- Mobile-optimized layout (responsive is nice-to-have, not required)
+
+## Assumptions
+- OpenRouter API supports CORS for browser-based calls (confirmed — but we're proxying anyway)
+- Users will provide their own valid OpenRouter API keys
+- No authentication needed for the app itself
+- localStorage is sufficient for conversation persistence (confirm?)
+
+## Verification Plan
+```
+# Build check
+npm run build
+
+# Lint check
+npx next lint
+
+# Manual QA checklist:
+# 1. Enter API key → models load
+# 2. Add 3 panels, select different models
+# 3. Send query → all active panels respond
+# 4. Set one panel inactive → resend → inactive panel skipped
+# 5. Drag to reorder panels
+# 6. Pin a panel → confirm it stays left after reorder
+# 7. Clear one panel's conversation
+# 8. Clear all conversations
+# 9. Refresh page → conversations persist
+# 10. Enter invalid API key → appropriate error
+# 11. Model search works in selector
+# 12. Refresh model list works
+```
 
 ## Rollback Plan
-- Single branch (`settings-and-panel-components`), can revert to `7b92ed2` (scaffolding commit)
+- Single branch (`llm-comparison-tool`), can revert to initial commit
+- No external services to roll back (client-side app)
