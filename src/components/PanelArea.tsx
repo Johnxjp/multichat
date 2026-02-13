@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -19,6 +20,13 @@ import { ModelPanel } from "./ModelPanel";
 
 export function PanelArea() {
   const { panels, addPanel, reorderPanels } = useAppStore();
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Prevent hydration errors by only rendering drag-drop on client
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsMounted(true);
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -53,20 +61,29 @@ export function PanelArea() {
   return (
     <main className="flex-1 overflow-x-auto">
       <div className="flex h-full gap-4 p-4 min-w-max">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={sortedPanels.map((p) => p.id)}
-            strategy={horizontalListSortingStrategy}
+        {isMounted ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
           >
-            {sortedPanels.map((panel) => (
-              <ModelPanel key={panel.id} panel={panel} />
-            ))}
-          </SortableContext>
-        </DndContext>
+            <SortableContext
+              items={sortedPanels.map((p) => p.id)}
+              strategy={horizontalListSortingStrategy}
+            >
+              {sortedPanels.map((panel) => (
+                <ModelPanel key={panel.id} panel={panel} />
+              ))}
+            </SortableContext>
+          </DndContext>
+        ) : (
+          // Render panels without drag-drop during SSR to prevent hydration errors
+          sortedPanels.map((panel) => (
+            <div key={panel.id}>
+              <ModelPanel panel={panel} />
+            </div>
+          ))
+        )}
 
         <button
           onClick={addPanel}

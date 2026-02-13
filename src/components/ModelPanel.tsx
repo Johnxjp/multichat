@@ -11,8 +11,17 @@ export function ModelPanel({ panel }: { panel: Panel }) {
 
   const [search, setSearch] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
+
+  // Prevent hydration errors by only using sortable hooks on client
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsMounted(true);
+  }, []);
+
+  const sortable = useSortable({ id: panel.id, disabled: !isMounted });
 
   const {
     attributes,
@@ -21,12 +30,14 @@ export function ModelPanel({ panel }: { panel: Panel }) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: panel.id });
+  } = sortable;
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const style = isMounted
+    ? {
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }
+    : {};
 
   const selectedModel = models.find((m) => m.id === panel.modelId);
 
@@ -73,8 +84,8 @@ export function ModelPanel({ panel }: { panel: Panel }) {
       {/* Header with drag handle */}
       <div className="flex items-center gap-2 mb-3">
         <button
-          {...attributes}
-          {...listeners}
+          {...(isMounted ? attributes : {})}
+          {...(isMounted ? listeners : {})}
           className="cursor-grab active:cursor-grabbing p-1 text-gray-500 hover:text-gray-300"
           title="Drag to reorder"
         >
@@ -94,7 +105,7 @@ export function ModelPanel({ panel }: { panel: Panel }) {
         </button>
 
         {/* Searchable model selector */}
-        <div className="relative flex-1" ref={dropdownRef}>
+        <div className="relative flex-1 min-w-0" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setDropdownOpen(!dropdownOpen)}
