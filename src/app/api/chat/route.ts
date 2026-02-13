@@ -30,8 +30,9 @@ export async function POST(request: NextRequest) {
     let errorMessage = response.statusText;
     try {
       const errorData = await response.json();
-      errorMessage =
-        errorData?.error?.message || JSON.stringify(errorData.error) || errorMessage;
+      const raw = errorData?.error?.metadata?.raw;
+      const base = errorData?.error?.message || JSON.stringify(errorData.error) || errorMessage;
+      errorMessage = raw ? `${base}: ${raw}` : base;
     } catch {
       const text = await response.text();
       if (text) errorMessage = text;

@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export interface Message {
-  role: "user" | "assistant" | "system";
+  role: "user" | "assistant";
   content: string;
 }
 
@@ -169,7 +169,7 @@ export const useAppStore = create<AppState>()(
           activePanels.map(async (panel) => {
             const messages: Message[] = [];
             if (systemPrompt.trim()) {
-              messages.push({ role: "system", content: systemPrompt });
+              messages.push({ role: "user", content: systemPrompt });
             }
             messages.push(...panel.conversationHistory, userMessage);
 
