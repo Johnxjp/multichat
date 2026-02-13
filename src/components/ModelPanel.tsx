@@ -110,12 +110,13 @@ export function ModelPanel({ panel }: { panel: Panel }) {
             type="button"
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="w-full bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-sm text-gray-200 text-left truncate focus:outline-none focus:ring-1 focus:ring-blue-500"
+            title={selectedModel ? selectedModel.name : "Select model..."}
           >
             {selectedModel ? selectedModel.name : "Select model..."}
           </button>
 
           {dropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-50 max-h-64 flex flex-col">
+            <div className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-50 max-h-64 flex flex-col w-[350px]">
               <input
                 type="text"
                 value={search}
@@ -146,6 +147,7 @@ export function ModelPanel({ panel }: { panel: Panel }) {
                           ? "text-blue-400"
                           : "text-gray-200"
                       }`}
+                      title={model.name}
                     >
                       {model.name}
                     </button>
