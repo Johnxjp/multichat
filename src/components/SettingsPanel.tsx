@@ -59,7 +59,7 @@ export function SettingsPanel() {
             htmlFor="api-key"
             className="block text-sm font-medium text-gray-400 mb-1"
           >
-            API Key
+            OpenRouter API Key
           </label>
           <div className="relative">
             <input
