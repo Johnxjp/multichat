@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 export interface Message {
   role: "user" | "assistant";
@@ -60,7 +59,6 @@ function createPanel(): Panel {
 }
 
 export const useAppStore = create<AppState>()(
-  persist(
     (set, get) => ({
       apiKey: "",
       systemPrompt: "",
@@ -224,22 +222,5 @@ export const useAppStore = create<AppState>()(
           })
         );
       },
-    }),
-    {
-      name: "llm-comparison-storage",
-      partialize: (state) => ({
-        systemPrompt: state.systemPrompt,
-        panels: state.panels.map((p) => ({
-          id: p.id,
-          modelId: p.modelId,
-          isActive: p.isActive,
-          isPinned: p.isPinned,
-          conversationHistory: p.conversationHistory,
-          isLoading: false,
-          error: null,
-          totalCost: p.totalCost,
-        })),
-      }),
-    }
-  )
+    })
 );

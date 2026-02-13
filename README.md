@@ -9,7 +9,7 @@ A web application that lets users compare LLM outputs side-by-side by selecting 
 - Shared system prompt across all panels
 - Drag-and-drop panel reordering with pin-to-left support
 - Per-panel active/inactive toggle (inactive panels skip queries)
-- Conversation history persisted to localStorage
+- In-memory state — refreshing the page resets the app
 - Parallel request dispatch — if one model fails, others continue
 
 ## Getting Started
