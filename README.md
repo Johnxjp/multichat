@@ -2,6 +2,10 @@
 
 A web application that lets users compare LLM outputs side-by-side by selecting multiple models from OpenRouter, entering a shared system prompt and query, and viewing each model's response in its own panel.
 
+https://multichat-rose.vercel.app/
+
+![image](documentation/assets/illustration.jpg)
+
 ## Features
 
 - Compare multiple LLM models side-by-side
@@ -13,10 +17,10 @@ A web application that lets users compare LLM outputs side-by-side by selecting 
 - Response latency display for each assistant message
 - Save All conversations to JSON (exports all panels with messages and costs)
 - Clear All conversations with one click
-- In-memory state — refreshing the page resets the app
 - Parallel request dispatch — if one model fails, others continue
 
 ## Getting Started
+To run locally
 
 ```bash
 npm install
@@ -25,6 +29,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) and enter your [OpenRouter API key](https://openrouter.ai/keys) to get started.
 
+Note: In-memory state — refreshing the page resets the app
+
 ## Tech Stack
 
 - Next.js 16 (App Router) with React 19
@@ -32,3 +38,5 @@ Open [http://localhost:3000](http://localhost:3000) and enter your [OpenRouter A
 - Tailwind CSS 4
 - Zustand 5 for state management
 - @dnd-kit for drag-and-drop
+
+Built with Claude.
